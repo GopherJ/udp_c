@@ -12,11 +12,9 @@
 #include <unistd.h>
 #include <string.h>
 #include <inttypes.h>
-
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
-
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 
 #include "utils.h"
@@ -90,7 +88,7 @@ int main(int argc, char **argv) {
 
         trans_buf[offset] = '\0';
         offset = 0;
-        printf("TransferredTo: %s\n", trans_buf);
+        printf("AfterRemovingSymbols: %s\n", trans_buf);
 
         sendto(socket_fd, trans_buf, strlen(trans_buf), 0, (const struct sockaddr *)&client_addr, sizeof(client_addr));
     }

@@ -11,10 +11,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <signal.h>
-
 #include <sys/types.h>
 #include <sys/socket.h>
-
 #include <arpa/inet.h>
 #include <netinet/in.h>
 
@@ -30,7 +28,7 @@
 void usage() {
     printf(
             "\n"
-            "  Usage: udp_client [ip_address] [port]\n"
+            "  Usage: udp_client ip_address port\n"
             "\n"
     );
     exit(EXIT_FAILURE);
@@ -40,10 +38,12 @@ int main(int argc, char **argv) {
     struct sockaddr_in server_addr;
     uint16_t port;
     int socket_fd;
-    char *buf;
+    char *buf = NULL;
     size_t len;
-    unsigned int socket_len;
+    socklen_t addr_size;
     ssize_t recv_len;
+
+    memset(&server_addr, 0, sizeof(server_addr));
 
     if (argc == 1)
         usage();
@@ -54,35 +54,30 @@ int main(int argc, char **argv) {
     else if (!str_to_uint16(argv[2], &port))
         printf("\nError: invalid port\n\n"), usage();
 
-    memset(&server_addr, 0, sizeof(server_addr));
-
-
     if ((socket_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         error("Socket creation");
         exit(EXIT_FAILURE);
     }
 
     server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(argv[1]);
     server_addr.sin_port = htons(port);
 
-    while (1) {
+    while (true) {
+        printf("\nEnter your message: ");
         if (getline(&buf, &len, stdin) != -1) {
-            if (sendto(socket_fd, buf, len, MSG_CONFIRM, (const struct sockaddr *) &server_addr, sizeof(server_addr)) == -1){
-                close(socket_fd);
+            if (sendto(socket_fd, buf, len, 0, (const struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
                 break;
             }
 
-            memset(buf, 0, sizeof(buf));
+            memset(buf, 0, len);
 
-            recv_len = recvfrom(socket_fd, buf, BUF_LEN, MSG_WAITALL, (struct sockaddr *) &server_addr, &socket_len);
-            if (recv_len == -1) {
-                close(socket_fd);
-                break;
-            }
+            recv_len = recvfrom(socket_fd, buf, BUF_LEN, 0, (struct sockaddr *)&server_addr, &addr_size);
+            if (recv_len == -1) break;
 
             printf("Recv: %s", buf);
-            memset(buf, 0, sizeof(buf));
         }
     }
+
+    close(socket_fd);
+    return EXIT_PROGRAM;
 }
